@@ -1,0 +1,99 @@
+#+TITLE: Create an encrypted home directory on Linux
+#+PROPERTY: header-args :session *shell* :results silent raw
+
+** Contents                                                           :TOC_3:
+  - [[#system-environment][System environment]]
+  - [[#system-preparation][System preparation]]
+  - [[#parameters][Parameters]]
+  - [[#create-a-container][Create a container]]
+  - [[#encrypt-the-container][Encrypt the container]]
+  - [[#make-a-file-system-in-the-container][Make a file system in the container]]
+  - [[#commands-for-mounting-and-umounting][Commands for mounting and umounting]]
+    - [[#mount-container][Mount container]]
+    - [[#umount-container][Umount container]]
+
+** System environment
+
+- CentOS 8.1
+
+** System preparation
+
+#+BEGIN_SRC sh
+yum install cryptsetup
+#+END_SRC
+
+** Parameters
+
+Set the size of the encrypted container in megabytes.
+
+#+BEGIN_SRC sh
+SIZE=1024
+#+END_SRC
+
+Set the path to the encrypted container.
+
+#+BEGIN_SRC sh
+CONTAINER=/root/data.bin
+#+END_SRC
+
+Set the filesystem.
+
+#+BEGIN_SRC sh
+FILESYSTEM=ext3
+#+END_SRC
+
+Set the container ID.
+
+#+BEGIN_SRC sh
+MOUNT_ID=homedir
+#+END_SRC
+
+Set the mount directory.
+
+#+BEGIN_SRC sh
+MOUNT_DIR=/home/
+#+END_SRC
+
+** Create a container
+
+This command can be executed for a long time.
+
+#+BEGIN_SRC sh
+dd if=/dev/urandom of=$CONTAINER bs=1M count=$SIZE
+#+END_SRC
+
+** Encrypt the container
+
+Answer the question and enter the encryption password.
+
+#+BEGIN_SRC sh
+cryptsetup -y luksFormat $CONTAINER
+#+END_SRC
+
+** Make a file system in the container
+
+#+BEGIN_SRC sh
+cryptsetup luksOpen $CONTAINER $MOUNT_ID
+#+END_SRC
+
+#+BEGIN_SRC sh
+mkfs -t $FILESYSTEM -j /dev/mapper/$MOUNT_ID
+#+END_SRC
+
+#+BEGIN_SRC sh
+cryptsetup luksClose $MOUNT_ID
+#+END_SRC
+
+** Commands for mounting and umounting
+
+*** Mount container
+
+#+BEGIN_SRC sh
+echo "cryptsetup luksOpen $CONTAINER $MOUNT_ID && mount /dev/mapper/$MOUNT_ID $MOUNT_DIR"
+#+END_SRC
+
+*** Umount container
+
+#+BEGIN_SRC sh
+echo "umount $MOUNT_DIR && cryptsetup luksClose $MOUNT_ID"
+#+END_SRC
